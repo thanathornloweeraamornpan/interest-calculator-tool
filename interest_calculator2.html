@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบคำนวณดอกเบี้ยถ่วงน้ำหนักแบบยืดหยุ่น</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background-color: #f8f9fa; }
+        .container { background-color: #fff; padding: 30px; border-radius: 10px; max-width: 600px; margin: auto; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); }
+        h2 { color: #007bff; text-align: center; margin-bottom: 25px; }
+        label { display: block; margin-top: 15px; font-weight: bold; color: #343a40; }
+        input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        .input-group { display: flex; align-items: center; }
+        .input-group input { flex-grow: 1; }
+        .unit { margin-left: 10px; font-weight: normal; color: #6c757d; width: 40px; text-align: left; }
+        button { background-color: #28a745; color: white; padding: 12px 15px; border: none; border-radius: 5px; cursor: pointer; width: 100%; margin-top: 30px; font-size: 18px; transition: background-color 0.3s; }
+        button:hover { background-color: #1e7e34; }
+        .result { margin-top: 25px; padding: 20px; border: 3px solid #007bff; border-radius: 8px; background-color: #eaf5ff; font-size: 1.2em; text-align: center; }
+        .error { border-color: #dc3545 !important; background-color: #f8d7da !important; color: #dc3545; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>🎯 คำนวณอัตราดอกเบี้ยถ่วงน้ำหนัก (หา R2)</h2>
+    <p style="text-align: center; color: #6c757d;">กรุณากรอกยอดกู้และอัตราดอกเบี้ยที่ทราบ เพื่อคำนวณหาอัตราดอกเบี้ยสัญญาที่ 2 ($R_2$)</p>
+
+    <label for="p1">ยอดกู้ สัญญาที่ 1 (P1):</label>
+    <div class="input-group">
+        <input type="number" id="p1" value="100000" min="0">
+        <span class="unit">บาท</span>
+    </div>
+
+    <label for="r1">อัตราดอกเบี้ย สัญญาที่ 1 (R1):</label>
+    <div class="input-group">
+        <input type="number" id="r1" value="25" min="0">
+        <span class="unit">%</span>
+    </div>
+
+    <label for="p2">ยอดกู้ สัญญาที่ 2 (P2):</label>
+    <div class="input-group">
+        <input type="number" id="p2" value="20000" min="0">
+        <span class="unit">บาท</span>
+    </div>
+
+    <label for="r_avg">อัตราดอกเบี้ยเฉลี่ยรวมที่ต้องการ (R_Avg):</label>
+    <div class="input-group">
+        <input type="number" id="r_avg" value="28" min="0">
+        <span class="unit">%</span>
+    </div>
+
+    <button onclick="calculateDynamicRate()">คำนวณหา อัตราดอกเบี้ย สัญญาที่ 2 (R2)</button>
+
+    <div class="result" id="result">
+        **ผลลัพธ์: R2 คือ ...**
+    </div>
+</div>
+
+<script>
+    function calculateDynamicRate() {
+        // 1. รับค่าจากผู้ใช้
+        const P1 = parseFloat(document.getElementById('p1').value);
+        const R1_Percent = parseFloat(document.getElementById('r1').value);
+        const P2 = parseFloat(document.getElementById('p2').value);
+        const R_Avg_Percent = parseFloat(document.getElementById('r_avg').value);
+        const resultDiv = document.getElementById('result');
+
+        // 2. ตรวจสอบความถูกต้องของข้อมูล
+        if (isNaN(P1) || isNaN(R1_Percent) || isNaN(P2) || isNaN(R_Avg_Percent) || P1 < 0 || R1_Percent < 0 || P2 < 0 || R_Avg_Percent < 0) {
+            resultDiv.innerHTML = "⚠️ **กรุณากรอกข้อมูลให้ครบถ้วนและถูกต้อง (ต้องเป็นตัวเลขบวกหรือศูนย์)**";
+            resultDiv.classList.add('error');
+            return;
+        }
+
+        if (P1 + P2 === 0) {
+            resultDiv.innerHTML = "⚠️ **ยอดกู้รวม (P1 + P2) ต้องมากกว่าศูนย์**";
+            resultDiv.classList.add('error');
+            return;
+        }
+
+        if (P2 === 0) {
+            resultDiv.innerHTML = "⚠️ **หาก P2 เป็น 0, R2 จะเป็นค่าเดียวกับ R_Avg ที่ต้องการ**";
+            // ในทางปฏิบัติถ้า P2=0 จะเกิดการหารด้วยศูนย์ในสูตร R2
+            // แต่ทางตรรกะคือ R2 ไม่ต้องใช้แล้ว เพราะ R_Avg = R1
+            const FinalR2 = R1_Percent;
+            if (FinalR2 !== R_Avg_Percent) {
+                resultDiv.innerHTML = `⚠️ **เนื่องจาก P2 เป็น 0** อัตราเฉลี่ยจึงเท่ากับ **R1 (${R1_Percent.toFixed(2)}%)** ซึ่งไม่เท่ากับอัตราเฉลี่ยที่ต้องการ (${R_Avg_Percent.toFixed(2)}%)`;
+            } else {
+                 resultDiv.innerHTML = `✅ **ยอดกู้ P2 เป็น 0: R2 คือ ${FinalR2.toFixed(2)} %** (อัตราเฉลี่ยรวมเท่ากับ R1)`;
+            }
+            resultDiv.classList.remove('error');
+            return;
+        }
+
+
+        // 3. แปลงอัตราดอกเบี้ยเป็นทศนิยม
+        const R1 = R1_Percent / 100;
+        const R_Avg = R_Avg_Percent / 100;
+
+        // 4. คำนวณดอกเบี้ยรวมที่ต้องการ
+        const TotalInterestNeeded = R_Avg * (P1 + P2);
+
+        // 5. คำนวณดอกเบี้ยที่มาจากสัญญา 1
+        const InterestFromP1 = P1 * R1;
+
+        // 6. คำนวณดอกเบี้ยที่ต้องมาจากสัญญา 2
+        const InterestFromP2 = TotalInterestNeeded - InterestFromP1;
+
+        // 7. คำนวณ R2 (ในรูปแบบทศนิยม)
+        const R2 = InterestFromP2 / P2;
+
+        // 8. แปลง R2 เป็นเปอร์เซ็นต์
+        const R2_Percent = R2 * 100;
+        
+        resultDiv.classList.remove('error');
+
+        // 9. ตรวจสอบและแสดงผลลัพธ์
+        if (R2_Percent < 0) {
+            resultDiv.innerHTML = `❌ **R2 ที่คำนวณได้คือ ${R2_Percent.toFixed(4)} %** (ติดลบ) <br><br> **หมายเหตุ:** อัตราดอกเบี้ยติดลบไม่สามารถเกิดขึ้นได้จริง กรุณาลองกรอก **R1** ให้มีค่าสูงขึ้น หรือ **R_Avg** ให้มีค่าต่ำลง`;
+            resultDiv.classList.add('error');
+        } else {
+            resultDiv.innerHTML = `✅ **อัตราดอกเบี้ย สัญญาที่ 2 (R2) คือ: ${R2_Percent.toFixed(4)} %**`;
+        }
+    }
+
+    // เรียกฟังก์ชันคำนวณเมื่อหน้าเว็บโหลดเสร็จ เพื่อแสดงผลลัพธ์แรกด้วยค่าเริ่มต้น
+    window.onload = calculateDynamicRate;
+</script>
+
+</body>
+</html>
